@@ -50,10 +50,23 @@ serve(async (req) => {
 
     console.log(`Validating ticket: ${sanitizedCode}`);
 
-    // Check if ticket exists
+    // Check if ticket exists with event and tier info
     const { data: ticket, error: fetchError } = await supabase
       .from('tickets')
-      .select('*')
+      .select(`
+        *,
+        events:event_id (
+          id,
+          title,
+          venue,
+          event_date
+        ),
+        ticket_tiers:tier_id (
+          id,
+          name,
+          price
+        )
+      `)
       .eq('ticket_code', sanitizedCode)
       .maybeSingle();
 
@@ -74,13 +87,17 @@ serve(async (req) => {
       console.log(`Ticket not found: ${sanitizedCode}`);
     } else if (ticket.is_used) {
       status = 'already-used';
-      message = 'Ticket has already been used';
+      message = `Ticket was used at ${new Date(ticket.used_at).toLocaleString()}`;
       console.log(`Ticket already used: ${sanitizedCode}`);
     } else {
-      // Mark ticket as used
+      // Mark ticket as used and set checked_in_at
       const { error: updateError } = await supabase
         .from('tickets')
-        .update({ is_used: true, used_at: new Date().toISOString() })
+        .update({ 
+          is_used: true, 
+          used_at: new Date().toISOString(),
+          checked_in_at: new Date().toISOString()
+        })
         .eq('id', ticket.id);
 
       if (updateError) {
@@ -92,7 +109,7 @@ serve(async (req) => {
       }
 
       status = 'valid';
-      message = 'Ticket validated successfully';
+      message = 'Welcome! Ticket validated successfully';
       console.log(`Ticket validated: ${sanitizedCode}`);
     }
 
@@ -106,14 +123,23 @@ serve(async (req) => {
 
     if (logError) {
       console.error('Failed to log scan:', logError);
-      // Don't fail the request just because logging failed
     }
+
+    // Extract event and tier info
+    const eventName = ticket?.events?.title || null;
+    const tierName = ticket?.ticket_tiers?.name || null;
+    const attendeeName = ticket?.attendee_name || null;
 
     return new Response(
       JSON.stringify({ 
         status, 
         message,
-        ticketType: ticket?.ticket_type || null 
+        ticketType: ticket?.ticket_type || tierName || null,
+        eventName,
+        tierName,
+        attendeeName,
+        eventDate: ticket?.events?.event_date || null,
+        venue: ticket?.events?.venue || null
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
