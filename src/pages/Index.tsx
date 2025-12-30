@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScanLine, History } from 'lucide-react';
 import { toast } from 'sonner';
@@ -7,49 +7,36 @@ import QRScanner from '@/components/QRScanner';
 import ScanResult, { ScanStatus } from '@/components/ScanResult';
 import ScanHistory, { ScanRecord } from '@/components/ScanHistory';
 import StatsBar from '@/components/StatsBar';
-
-// Simulated valid ticket codes (in production, this would be a database check)
-const VALID_TICKETS = new Set([
-  'TICKET-001-ABC123',
-  'TICKET-002-DEF456',
-  'TICKET-003-GHI789',
-  'VIP-PASS-2024',
-  'GENERAL-ADMISSION-100',
-]);
+import { useTicketValidation } from '@/hooks/useTicketValidation';
 
 const Index = () => {
   const [isScanning, setIsScanning] = useState(true);
   const [scanStatus, setScanStatus] = useState<ScanStatus>(null);
   const [currentTicket, setCurrentTicket] = useState<string | null>(null);
   const [scanHistory, setScanHistory] = useState<ScanRecord[]>([]);
-  const [usedTickets, setUsedTickets] = useState<Set<string>>(new Set());
+  
+  const { validateTicket, fetchScanHistory, isValidating } = useTicketValidation();
 
-  const validateTicket = useCallback((ticketData: string): ScanStatus => {
-    // Check if already used
-    if (usedTickets.has(ticketData)) {
-      return 'already-used';
-    }
-    
-    // Check if valid ticket (in production, this would be an API call)
-    // For demo: any ticket starting with "TICKET-", "VIP-", or "GENERAL-" is valid
-    const isValid = VALID_TICKETS.has(ticketData) || 
-                    ticketData.startsWith('TICKET-') || 
-                    ticketData.startsWith('VIP-') || 
-                    ticketData.startsWith('GENERAL-');
-    
-    return isValid ? 'valid' : 'invalid';
-  }, [usedTickets]);
+  // Load scan history on mount
+  useEffect(() => {
+    const loadHistory = async () => {
+      const history = await fetchScanHistory();
+      setScanHistory(history);
+    };
+    loadHistory();
+  }, [fetchScanHistory]);
 
-  const handleScan = useCallback((result: string) => {
+  const handleScan = useCallback(async (result: string) => {
     // Pause scanning
     setIsScanning(false);
     setCurrentTicket(result);
+    setScanStatus(null);
 
-    // Validate ticket
-    const status = validateTicket(result);
+    // Validate ticket via backend
+    const { status, message } = await validateTicket(result);
     setScanStatus(status);
 
-    // Add to history
+    // Add to local history immediately for UI feedback
     const record: ScanRecord = {
       id: Date.now().toString(),
       ticketData: result,
@@ -58,14 +45,13 @@ const Index = () => {
     };
     setScanHistory(prev => [record, ...prev]);
 
-    // Mark as used if valid
+    // Show toast notification
     if (status === 'valid') {
-      setUsedTickets(prev => new Set([...prev, result]));
-      toast.success('Ticket validated successfully!');
+      toast.success(message);
     } else if (status === 'invalid') {
-      toast.error('Invalid ticket code');
+      toast.error(message);
     } else if (status === 'already-used') {
-      toast.warning('This ticket has already been scanned');
+      toast.warning(message);
     }
   }, [validateTicket]);
 
@@ -107,6 +93,11 @@ const Index = () => {
                 ticketData={currentTicket}
                 onReset={handleReset}
               />
+            ) : isValidating ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                <p className="mt-4 text-muted-foreground font-mono">Validating ticket...</p>
+              </div>
             ) : (
               <QRScanner 
                 onScan={handleScan}
@@ -119,14 +110,6 @@ const Index = () => {
             <ScanHistory records={scanHistory} />
           </TabsContent>
         </Tabs>
-
-        {/* Demo hint */}
-        <div className="mt-8 p-4 bg-secondary/50 rounded-xl border border-border/50">
-          <p className="text-xs text-muted-foreground font-mono text-center">
-            <span className="text-primary">TIP:</span> Scan any QR code starting with 
-            "TICKET-", "VIP-", or "GENERAL-" for a valid result.
-          </p>
-        </div>
       </div>
     </div>
   );
