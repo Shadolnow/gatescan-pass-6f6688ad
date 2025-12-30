@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      scan_logs: {
+        Row: {
+          id: string
+          scanned_at: string
+          status: string
+          ticket_code: string
+        }
+        Insert: {
+          id?: string
+          scanned_at?: string
+          status: string
+          ticket_code: string
+        }
+        Update: {
+          id?: string
+          scanned_at?: string
+          status?: string
+          ticket_code?: string
+        }
+        Relationships: []
+      }
+      tickets: {
+        Row: {
+          created_at: string
+          id: string
+          is_used: boolean
+          ticket_code: string
+          ticket_type: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_used?: boolean
+          ticket_code: string
+          ticket_type?: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_used?: boolean
+          ticket_code?: string
+          ticket_type?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
