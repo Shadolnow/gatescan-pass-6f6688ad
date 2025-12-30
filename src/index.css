@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,48 +6,52 @@
 
 @layer base {
   :root {
-    --background: 220 20% 6%;
-    --foreground: 210 40% 96%;
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
 
-    --card: 220 18% 10%;
-    --card-foreground: 210 40% 96%;
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 220 18% 10%;
-    --popover-foreground: 210 40% 96%;
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 185 100% 50%;
-    --primary-foreground: 220 20% 6%;
+    --primary: 187 100% 50%;
+    --primary-foreground: 240 10% 4%;
 
-    --secondary: 220 15% 15%;
-    --secondary-foreground: 210 40% 96%;
+    --secondary: 240 6% 12%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 220 15% 18%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 240 6% 16%;
+    --muted-foreground: 240 5% 55%;
 
-    --accent: 185 100% 50%;
-    --accent-foreground: 220 20% 6%;
+    --accent: 280 100% 65%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
     --success: 142 76% 45%;
-    --success-foreground: 220 20% 6%;
+    --success-foreground: 240 10% 4%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 220 20% 6%;
+    --warning-foreground: 240 10% 4%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 185 100% 50%;
+    --border: 240 6% 18%;
+    --input: 240 6% 18%;
+    --ring: 187 100% 50%;
 
     --radius: 0.75rem;
 
-    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-sans: 'Space Grotesk', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 
-    --glow-primary: 0 0 30px hsl(185 100% 50% / 0.4);
-    --glow-success: 0 0 30px hsl(142 76% 45% / 0.4);
-    --glow-destructive: 0 0 30px hsl(0 72% 51% / 0.4);
+    --glow-primary: 0 0 40px hsl(187 100% 50% / 0.4);
+    --glow-success: 0 0 40px hsl(142 76% 45% / 0.4);
+    --glow-destructive: 0 0 40px hsl(0 72% 51% / 0.4);
+    --glow-accent: 0 0 40px hsl(280 100% 65% / 0.4);
+
+    --gradient-primary: linear-gradient(135deg, hsl(187 100% 50%) 0%, hsl(280 100% 65%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(240 10% 4%) 0%, hsl(240 10% 8%) 100%);
   }
 }
 
@@ -58,10 +62,58 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    background-image: 
+      radial-gradient(ellipse at top, hsl(240 10% 8%) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom right, hsl(280 100% 65% / 0.05) 0%, transparent 40%),
+      radial-gradient(ellipse at bottom left, hsl(187 100% 50% / 0.05) 0%, transparent 40%);
+    background-attachment: fixed;
   }
 }
 
 @layer utilities {
+  .gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-border {
+    position: relative;
+    background: hsl(var(--card));
+    border-radius: var(--radius);
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--gradient-primary);
+    -webkit-mask: 
+      linear-gradient(#fff 0 0) content-box, 
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .glass {
+    background: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  .glass-hover {
+    @apply transition-all duration-300;
+  }
+
+  .glass-hover:hover {
+    background: hsl(var(--card) / 0.8);
+    border-color: hsl(var(--primary) / 0.3);
+  }
+
   .scanner-frame {
     background: linear-gradient(135deg, hsl(var(--primary)) 0%, transparent 50%),
                 linear-gradient(225deg, hsl(var(--primary)) 0%, transparent 50%),
@@ -121,5 +173,38 @@
 
   .status-glow {
     animation: status-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  .float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--primary) / 0.1) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite;
   }
 }

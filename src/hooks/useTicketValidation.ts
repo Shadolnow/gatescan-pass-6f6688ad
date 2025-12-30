@@ -3,14 +3,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { ScanStatus } from '@/components/ScanResult';
 import { ScanRecord } from '@/components/ScanHistory';
 
+export interface ValidationResult {
+  status: ScanStatus;
+  message: string;
+  ticketType: string | null;
+  eventName: string | null;
+  tierName: string | null;
+  attendeeName: string | null;
+  eventDate: string | null;
+  venue: string | null;
+}
+
 export const useTicketValidation = () => {
   const [isValidating, setIsValidating] = useState(false);
 
-  const validateTicket = useCallback(async (ticketCode: string): Promise<{
-    status: ScanStatus;
-    message: string;
-    ticketType: string | null;
-  }> => {
+  const validateTicket = useCallback(async (ticketCode: string): Promise<ValidationResult> => {
     setIsValidating(true);
     
     try {
@@ -23,21 +30,36 @@ export const useTicketValidation = () => {
         return {
           status: 'invalid',
           message: 'Validation failed. Please try again.',
-          ticketType: null
+          ticketType: null,
+          eventName: null,
+          tierName: null,
+          attendeeName: null,
+          eventDate: null,
+          venue: null
         };
       }
 
       return {
         status: data.status as ScanStatus,
         message: data.message,
-        ticketType: data.ticketType
+        ticketType: data.ticketType,
+        eventName: data.eventName,
+        tierName: data.tierName,
+        attendeeName: data.attendeeName,
+        eventDate: data.eventDate,
+        venue: data.venue
       };
     } catch (error) {
       console.error('Network error:', error);
       return {
         status: 'invalid',
         message: 'Network error. Please check your connection.',
-        ticketType: null
+        ticketType: null,
+        eventName: null,
+        tierName: null,
+        attendeeName: null,
+        eventDate: null,
+        venue: null
       };
     } finally {
       setIsValidating(false);

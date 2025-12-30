@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, AlertCircle, RotateCcw } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, RotateCcw, User, Calendar, MapPin, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export type ScanStatus = 'valid' | 'invalid' | 'already-used' | null;
@@ -7,9 +7,23 @@ interface ScanResultProps {
   status: ScanStatus;
   ticketData: string | null;
   onReset: () => void;
+  eventName?: string;
+  tierName?: string;
+  attendeeName?: string;
+  venue?: string;
+  eventDate?: string;
 }
 
-const ScanResult = ({ status, ticketData, onReset }: ScanResultProps) => {
+const ScanResult = ({ 
+  status, 
+  ticketData, 
+  onReset,
+  eventName,
+  tierName,
+  attendeeName,
+  venue,
+  eventDate
+}: ScanResultProps) => {
   if (!status || !ticketData) return null;
 
   const getStatusConfig = () => {
@@ -18,7 +32,7 @@ const ScanResult = ({ status, ticketData, onReset }: ScanResultProps) => {
         return {
           icon: CheckCircle2,
           title: 'ACCESS GRANTED',
-          subtitle: 'Ticket verified successfully',
+          subtitle: attendeeName ? `Welcome, ${attendeeName}!` : 'Ticket verified successfully',
           bgClass: 'bg-success/10 border-success/50',
           iconClass: 'text-success',
           glowClass: 'shadow-glow-success',
@@ -65,6 +79,36 @@ const ScanResult = ({ status, ticketData, onReset }: ScanResultProps) => {
             {config.subtitle}
           </p>
         </div>
+
+        {/* Event & Ticket Details */}
+        {(eventName || tierName || venue) && (
+          <div className="w-full space-y-2 text-left">
+            {eventName && (
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="w-4 h-4 text-primary" />
+                <span className="text-foreground font-medium">{eventName}</span>
+              </div>
+            )}
+            {tierName && (
+              <div className="flex items-center gap-2 text-sm">
+                <Ticket className="w-4 h-4 text-primary" />
+                <span className="text-muted-foreground">{tierName}</span>
+              </div>
+            )}
+            {venue && (
+              <div className="flex items-center gap-2 text-sm">
+                <MapPin className="w-4 h-4 text-primary" />
+                <span className="text-muted-foreground">{venue}</span>
+              </div>
+            )}
+            {attendeeName && status === 'valid' && (
+              <div className="flex items-center gap-2 text-sm">
+                <User className="w-4 h-4 text-primary" />
+                <span className="text-muted-foreground">{attendeeName}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="w-full p-3 bg-secondary/50 rounded-lg">
           <p className="text-xs text-muted-foreground font-mono mb-1">TICKET ID</p>

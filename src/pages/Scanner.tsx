@@ -7,7 +7,7 @@ import QRScanner from '@/components/QRScanner';
 import ScanResult, { ScanStatus } from '@/components/ScanResult';
 import ScanHistory, { ScanRecord } from '@/components/ScanHistory';
 import StatsBar from '@/components/StatsBar';
-import { useTicketValidation } from '@/hooks/useTicketValidation';
+import { useTicketValidation, ValidationResult } from '@/hooks/useTicketValidation';
 
 interface ExtendedScanRecord extends ScanRecord {
   eventName?: string;
@@ -20,11 +20,7 @@ const Scanner = () => {
   const [scanStatus, setScanStatus] = useState<ScanStatus>(null);
   const [currentTicket, setCurrentTicket] = useState<string | null>(null);
   const [scanHistory, setScanHistory] = useState<ExtendedScanRecord[]>([]);
-  const [scanDetails, setScanDetails] = useState<{
-    eventName?: string;
-    tierName?: string;
-    attendeeName?: string;
-  } | null>(null);
+  const [scanDetails, setScanDetails] = useState<Partial<ValidationResult> | null>(null);
   
   const { validateTicket, fetchScanHistory, isValidating } = useTicketValidation();
 
@@ -42,34 +38,33 @@ const Scanner = () => {
     setScanStatus(null);
     setScanDetails(null);
 
-    const { status, message, eventName, tierName, attendeeName } = await validateTicket(result);
-    setScanStatus(status);
-    setScanDetails({ eventName, tierName, attendeeName });
+    const validationResult = await validateTicket(result);
+    setScanStatus(validationResult.status);
+    setScanDetails(validationResult);
 
     const record: ExtendedScanRecord = {
       id: Date.now().toString(),
       ticketData: result,
-      status,
+      status: validationResult.status,
       timestamp: new Date(),
-      eventName,
-      tierName,
-      attendeeName,
+      eventName: validationResult.eventName || undefined,
+      tierName: validationResult.tierName || undefined,
+      attendeeName: validationResult.attendeeName || undefined,
     };
     setScanHistory(prev => [record, ...prev]);
 
-    if (status === 'valid') {
-      toast.success(message);
-      // Vibrate on success if supported
+    if (validationResult.status === 'valid') {
+      toast.success(validationResult.message);
       if (navigator.vibrate) {
         navigator.vibrate(200);
       }
-    } else if (status === 'invalid') {
-      toast.error(message);
+    } else if (validationResult.status === 'invalid') {
+      toast.error(validationResult.message);
       if (navigator.vibrate) {
         navigator.vibrate([100, 50, 100]);
       }
-    } else if (status === 'already-used') {
-      toast.warning(message);
+    } else if (validationResult.status === 'already-used') {
+      toast.warning(validationResult.message);
       if (navigator.vibrate) {
         navigator.vibrate([100, 50, 100, 50, 100]);
       }
@@ -88,8 +83,10 @@ const Scanner = () => {
       <Navbar />
       <div className="max-w-md mx-auto px-4 pb-8 pt-6">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold font-mono">GATESCAN</h1>
-          <p className="text-muted-foreground">Ticket Validation Scanner</p>
+          <h1 className="text-2xl font-bold font-mono bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            GATESCAN
+          </h1>
+          <p className="text-muted-foreground text-sm">Ticket Validation Scanner</p>
         </div>
         
         <StatsBar records={scanHistory} />
@@ -118,9 +115,11 @@ const Scanner = () => {
                 status={scanStatus}
                 ticketData={currentTicket}
                 onReset={handleReset}
-                eventName={scanDetails?.eventName}
-                tierName={scanDetails?.tierName}
-                attendeeName={scanDetails?.attendeeName}
+                eventName={scanDetails?.eventName || undefined}
+                tierName={scanDetails?.tierName || undefined}
+                attendeeName={scanDetails?.attendeeName || undefined}
+                venue={scanDetails?.venue || undefined}
+                eventDate={scanDetails?.eventDate || undefined}
               />
             ) : isValidating ? (
               <div className="flex flex-col items-center justify-center py-12">
